@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import "./index.css";
+import { Analytics } from "@vercel/analytics/react"
 
 function sanitizarEntradaDecimalCL(valor) {
   if (typeof valor !== "string") return "";
@@ -397,7 +398,9 @@ export default function App() {
   }
 
   return (
+    <>
     <div className="app">
+      
       <h1 className="title">Calculadora de Dosis</h1>
 
       <div className="tabs">
@@ -606,5 +609,9 @@ export default function App() {
         </button>
       </div>
     </div>
+    <Analytics />
+
+    </>
+    
   );
 }
