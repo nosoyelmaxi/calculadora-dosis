@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from "react";
+import { Analytics } from "@vercel/analytics/react";
 import "./index.css";
 
 function sanitizarEntradaDecimalCL(valor) {
@@ -605,6 +606,7 @@ export default function App() {
           Reiniciar
         </button>
       </div>
+      <Analytics />
     </div>
   );
 }
