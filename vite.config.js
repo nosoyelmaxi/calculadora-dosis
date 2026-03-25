@@ -11,7 +11,7 @@ export default defineConfig({
       includeAssets: ['apple-touch-icon.png'],
       manifest: {
         name: 'Calculadora de Dosis',
-        short_name: 'Calc Dosis',
+        short_name: 'Calcular Dosis',
         description: 'Herramienta rápida de apoyo para cálculos clínicos',
         theme_color: '#1e63d5',
         background_color: '#e3e7ed',

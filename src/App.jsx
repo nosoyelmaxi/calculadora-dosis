@@ -1,20 +1,15 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import "./index.css";
-import { Analytics } from "@vercel/analytics/react"
+import { Analytics } from "@vercel/analytics/react";
+import { Menu, X } from "lucide-react";
 
 function sanitizarEntradaDecimalCL(valor) {
   if (typeof valor !== "string") return "";
 
-  // Quitar espacios
   let limpio = valor.replace(/\s+/g, "");
-
-  // Permitir solo números, punto y coma
   limpio = limpio.replace(/[^0-9.,]/g, "");
-
-  // Quitar TODOS los puntos (miles)
   limpio = limpio.replace(/\./g, "");
 
-  // Permitir solo una coma decimal
   const partes = limpio.split(",");
   if (partes.length > 2) {
     limpio = partes[0] + "," + partes.slice(1).join("");
@@ -90,9 +85,9 @@ function convertirAMinutos(valor, unidad) {
 function obtenerConcentracionUI(tipo) {
   switch (tipo) {
     case "insulina":
-      return 100; // 100 UI por 1 mL
+      return 100;
     case "heparina5000":
-      return 5000; // 5000 UI por 1 mL
+      return 5000;
     default:
       return null;
   }
@@ -182,7 +177,6 @@ function crearPropsInputDecimal(valor, setter, maxLength = 12) {
 export default function App() {
   const [modo, setModo] = useState("volumen");
 
-  // Volumen a administrar
   const [dosisIndicada, setDosisIndicada] = useState("");
   const [unidadDosis, setUnidadDosis] = useState("mg");
 
@@ -190,11 +184,10 @@ export default function App() {
   const [unidadFrasco, setUnidadFrasco] = useState("mg");
 
   const [volumenDisponible, setVolumenDisponible] = useState("");
-  const [unidadVolumen, setUnidadVolumen] = useState("mL");
+  const [unidadVolumen] = useState("mL");
 
   const [tipoUI, setTipoUI] = useState("insulina");
 
-  // Gotas por tiempo
   const [volumenTotal, setVolumenTotal] = useState("");
   const [unidadVolumenTotal, setUnidadVolumenTotal] = useState("mL");
 
@@ -203,11 +196,26 @@ export default function App() {
 
   const [tipoGoteroVisible, setTipoGoteroVisible] = useState("macro");
 
-  // Referencias
   const dosisInputRef = useRef(null);
   const frascoInputRef = useRef(null);
   const volumenTotalInputRef = useRef(null);
   const tiempoInputRef = useRef(null);
+
+  const [menuAbierto, setMenuAbierto] = useState(false);
+  const [temaOscuro, setTemaOscuro] = useState(() => {
+    const guardado = localStorage.getItem("tema-oscuro");
+    return guardado === "true";
+  });
+
+  useEffect(() => {
+    localStorage.setItem("tema-oscuro", String(temaOscuro));
+
+    if (temaOscuro) {
+      document.body.classList.add("dark-body");
+    } else {
+      document.body.classList.remove("dark-body");
+    }
+  }, [temaOscuro]);
 
   function enfocarInput(ref) {
     setTimeout(() => {
@@ -382,7 +390,6 @@ export default function App() {
     setUnidadFrasco("mg");
 
     setVolumenDisponible("");
-    setUnidadVolumen("mL");
 
     setTipoUI("insulina");
 
@@ -394,224 +401,337 @@ export default function App() {
 
     setTipoGoteroVisible("macro");
 
+    setMenuAbierto(false);
+
     enfocarInput(dosisInputRef);
   }
 
   return (
     <>
-    <div className="app">
-      
-      <h1 className="title">Calculadora de Dosis</h1>
+      <div className={`app ${temaOscuro ? "dark" : ""}`}>
+        <div
+          className={`menu-overlay ${menuAbierto ? "show" : ""}`}
+          onClick={() => setMenuAbierto(false)}
+        />
 
-      <div className="tabs">
-        <button
-          className={modo === "volumen" ? "tab active" : "tab"}
-          onClick={() => setModo("volumen")}
-        >
-          Volumen a Administrar
-        </button>
+        <aside className={`side-menu ${menuAbierto ? "open" : ""}`}>
+          <div className="side-menu-header">
+            <h2>Menú</h2>
+            <button
+              type="button"
+              className="close-menu-btn"
+              onClick={() => setMenuAbierto(false)}
+              aria-label="Cerrar menú"
+            >
+              <X size={24} strokeWidth={2.5} />
+            </button>
+          </div>
 
-        <button
-          className={modo === "gotas" ? "tab active" : "tab"}
-          onClick={() => setModo("gotas")}
-        >
-          Gotas por Tiempo
-        </button>
-      </div>
+          <nav className="side-menu-nav">
+            <button
+              type="button"
+              className="side-menu-item"
+              onClick={() =>
+                window.open(
+                  "https://forms.gle/i1VG8Jax1vGDnn786",
+                  "_blank",
+                  "noopener,noreferrer"
+                )
+              }
+            >
+              Enviar reseña
+            </button>
 
-      <div className="content">
-        {modo === "volumen" ? (
-          <div className="form-section">
-            <div className="field">
-              <label>Dosis indicada</label>
-              <div className="input-row">
-                <input
-                  ref={dosisInputRef}
-                  {...crearPropsInputDecimal(dosisIndicada, setDosisIndicada, 12)}
-                  placeholder="Ej: 20"
-                />
-                <select value={unidadDosis} onChange={manejarCambioUnidadDosis}>
-                  <option value="mg">mg</option>
-                  <option value="g">g</option>
-                  <option value="UI">UI</option>
-                </select>
-              </div>
+            <div className="side-menu-setting">
+              <span className="side-menu-setting-label">Tema oscuro</span>
+
+              <button
+                type="button"
+                className={`theme-switch ${temaOscuro ? "on" : ""}`}
+                onClick={() => setTemaOscuro((prev) => !prev)}
+                aria-label={
+                  temaOscuro ? "Desactivar tema oscuro" : "Activar tema oscuro"
+                }
+                aria-pressed={temaOscuro}
+              >
+                <span className="theme-switch-thumb" />
+              </button>
             </div>
+          </nav>
 
-            <div className="field">
-              <label>Cantidad del medicamento en el frasco</label>
-              <div className="input-row">
-                <input
-                  ref={frascoInputRef}
-                  {...crearPropsInputDecimal(cantidadFrasco, setCantidadFrasco, 12)}
-                  placeholder="Ej: 50"
-                />
-                <select value={unidadFrasco} onChange={manejarCambioUnidadFrasco}>
-                  <option value="mg">mg</option>
-                  <option value="g">g</option>
-                  <option value="UI">UI</option>
-                </select>
-              </div>
-            </div>
+          {/* 🔽 BLOQUE DE DONACIÓN */}
+          <div className="side-menu-donate">
+            <p className="side-menu-donate-text">
+              Esta app es gratuita.<br />
+              Si te resulta útil, puedes apoyarnos con una pequeña donación 💛
+            </p>
 
-            {usandoUI && (
+            <button
+              type="button"
+              className="side-menu-donate-btn"
+              onClick={() =>
+                window.open(
+                  "https://link.mercadopago.cl/calculadoradosis",
+                  "_blank",
+                  "noopener,noreferrer"
+                )
+              }
+            >
+              ☕ Apoyar el desarrollo
+            </button>
+          </div>
+        </aside>
+
+        <header className="top-header">
+          <button
+            type="button"
+            className="menu-btn"
+            onClick={() => setMenuAbierto(true)}
+            aria-label="Abrir menú"
+          >
+            <Menu size={28} strokeWidth={2.5} />
+          </button>
+
+          <h1 className="header-title">Calculadora de Dosis</h1>
+        </header>
+
+        <div className="tabs">
+          <button
+            className={modo === "volumen" ? "tab active" : "tab"}
+            onClick={() => setModo("volumen")}
+          >
+            Volumen a Administrar
+          </button>
+
+          <button
+            className={modo === "gotas" ? "tab active" : "tab"}
+            onClick={() => setModo("gotas")}
+          >
+            Gotas por Tiempo
+          </button>
+        </div>
+
+        <div className="content">
+          {modo === "volumen" ? (
+            <div className="form-section">
               <div className="field">
-                <label>Tipo de concentración UI</label>
-
-                <div className="toggle-group">
-                  <button
-                    type="button"
-                    className={
-                      tipoUI === "insulina" ? "toggle-btn active" : "toggle-btn"
-                    }
-                    onClick={() => manejarCambioTipoUI("insulina")}
-                  >
-                    Insulina U-100
-                    <br />
-                    <span className="toggle-subtext">100 UI = 1 mL</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    className={
-                      tipoUI === "heparina5000"
-                        ? "toggle-btn active"
-                        : "toggle-btn"
-                    }
-                    onClick={() => manejarCambioTipoUI("heparina5000")}
-                  >
-                    Heparina
-                    <br />
-                    <span className="toggle-subtext">5.000 UI = 1 mL</span>
-                  </button>
+                <label>Dosis indicada</label>
+                <div className="input-row">
+                  <input
+                    ref={dosisInputRef}
+                    {...crearPropsInputDecimal(
+                      dosisIndicada,
+                      setDosisIndicada,
+                      12
+                    )}
+                    placeholder="Ej: 20"
+                  />
+                  <select value={unidadDosis} onChange={manejarCambioUnidadDosis}>
+                    <option value="mg">mg</option>
+                    <option value="g">g</option>
+                    <option value="UI">UI</option>
+                  </select>
                 </div>
               </div>
-            )}
 
-            <div className="field">
-              <label>Volumen disponible</label>
-              <div className="input-row">
-                <input
-                  {...crearPropsInputDecimal(
-                    volumenDisponible,
-                    setVolumenDisponible,
-                    12
-                  )}
-                  placeholder="Ej: 5"
-                />
-                <select
-                  value={unidadVolumen}
-                  onChange={(e) => setUnidadVolumen(e.target.value)}
+              <div className="field">
+                <label>Cantidad del medicamento en el frasco</label>
+                <div className="input-row">
+                  <input
+                    ref={frascoInputRef}
+                    {...crearPropsInputDecimal(
+                      cantidadFrasco,
+                      setCantidadFrasco,
+                      12
+                    )}
+                    placeholder="Ej: 50"
+                  />
+                  <select
+                    value={unidadFrasco}
+                    onChange={manejarCambioUnidadFrasco}
+                  >
+                    <option value="mg">mg</option>
+                    <option value="g">g</option>
+                    <option value="UI">UI</option>
+                  </select>
+                </div>
+              </div>
+
+              {usandoUI && (
+                <div className="field">
+                  <label>Tipo de concentración UI</label>
+
+                  <div className="toggle-group">
+                    <button
+                      type="button"
+                      className={
+                        tipoUI === "insulina"
+                          ? "toggle-btn active"
+                          : "toggle-btn"
+                      }
+                      onClick={() => manejarCambioTipoUI("insulina")}
+                    >
+                      Insulina U-100
+                      <br />
+                      <span className="toggle-subtext">100 UI = 1 mL</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      className={
+                        tipoUI === "heparina5000"
+                          ? "toggle-btn active"
+                          : "toggle-btn"
+                      }
+                      onClick={() => manejarCambioTipoUI("heparina5000")}
+                    >
+                      Heparina
+                      <br />
+                      <span className="toggle-subtext">5.000 UI = 1 mL</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <div className="field">
+                <label>Volumen disponible</label>
+                <div className="input-row">
+                  <input
+                    {...crearPropsInputDecimal(
+                      volumenDisponible,
+                      setVolumenDisponible,
+                      12
+                    )}
+                    placeholder="Ej: 5"
+                  />
+                  <select value={unidadVolumen} disabled>
+                    <option value="mL">mL</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="result-card">
+                <p className="result-label">Debes administrar:</p>
+                <p className="result-value">
+                  {formatearResultado(resultadoVolumen)}
+                </p>
+              </div>
+
+              <p className="aviso2">
+                Cálculos basados en fórmulas estándar de dosis e infusión.
+              </p>
+            </div>
+          ) : (
+            <div className="form-section">
+              <div className="field">
+                <label>Volumen total</label>
+                <div className="input-row">
+                  <input
+                    ref={volumenTotalInputRef}
+                    {...crearPropsInputDecimal(
+                      volumenTotal,
+                      setVolumenTotal,
+                      12
+                    )}
+                    placeholder="Ej: 1.000"
+                  />
+                  <select
+                    value={unidadVolumenTotal}
+                    onChange={manejarCambioUnidadVolumenTotal}
+                  >
+                    <option value="mL">mL</option>
+                    <option value="L">L</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="field">
+                <label>Tiempo</label>
+                <div className="input-row">
+                  <input
+                    ref={tiempoInputRef}
+                    {...crearPropsInputDecimal(tiempo, setTiempo, 12)}
+                    placeholder="Ej: 2,5"
+                  />
+                  <select value={unidadTiempo} onChange={manejarCambioUnidadTiempo}>
+                    <option value="horas">hrs</option>
+                    <option value="min">min</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="toggle-group">
+                <button
+                  type="button"
+                  className={
+                    tipoGoteroVisible === "macro"
+                      ? "toggle-btn active"
+                      : "toggle-btn"
+                  }
+                  onClick={() => setTipoGoteroVisible("macro")}
                 >
-                  <option value="mL">mL</option>
-                </select>
-              </div>
-            </div>
+                  Macrogoteo (20 gotas/mL)
+                </button>
 
-            <div className="result-card">
-              <p className="result-label">Debes administrar:</p>
-              <p className="result-value">{formatearResultado(resultadoVolumen)}</p>
-            </div>
-                  <p class="aviso2">Cálculos basados en fórmulas estándar de dosis e infusión.</p>
-          </div>
-        ) : (
-          <div className="form-section">
-            <div className="field">
-              <label>Volumen total</label>
-              <div className="input-row">
-                <input
-                  ref={volumenTotalInputRef}
-                  {...crearPropsInputDecimal(volumenTotal, setVolumenTotal, 12)}
-                  placeholder="Ej: 1.000"
-                />
-                <select
-                  value={unidadVolumenTotal}
-                  onChange={manejarCambioUnidadVolumenTotal}
+                <button
+                  type="button"
+                  className={
+                    tipoGoteroVisible === "micro"
+                      ? "toggle-btn active"
+                      : "toggle-btn"
+                  }
+                  onClick={() => setTipoGoteroVisible("micro")}
                 >
-                  <option value="mL">mL</option>
-                  <option value="L">L</option>
-                </select>
+                  Microgoteo (60 gotas/mL)
+                </button>
               </div>
-            </div>
 
-            <div className="field">
-              <label>Tiempo</label>
-              <div className="input-row">
-                <input
-                  ref={tiempoInputRef}
-                  {...crearPropsInputDecimal(tiempo, setTiempo, 12)}
-                  placeholder="Ej: 2,5"
-                />
-                <select value={unidadTiempo} onChange={manejarCambioUnidadTiempo}>
-                  <option value="horas">horas</option>
-                  <option value="min">min</option>
-                </select>
+              <div className="result-card">
+                <p className="result-label">
+                  {tipoGoteroVisible === "macro"
+                    ? "Ritmo de goteo:"
+                    : "Ritmo de microgoteo:"}
+                </p>
+                <p className="result-value result-value-small">
+                  {tipoGoteroVisible === "macro"
+                    ? formatearGotas(resultadosGoteo.macroGotas)
+                    : formatearGotas(resultadosGoteo.microGotas)}
+                </p>
               </div>
-            </div>
 
-            <div className="toggle-group">
-              <button
-                type="button"
-                className={
-                  tipoGoteroVisible === "macro"
-                    ? "toggle-btn active"
-                    : "toggle-btn"
-                }
-                onClick={() => setTipoGoteroVisible("macro")}
-              >
-                Macrogoteo (20 gotas/mL)
-              </button>
+              <div className="result-card">
+                <p className="result-label">Ritmo de infusión:</p>
+                <p className="result-value result-value-small">
+                  {formatearRitmoInfusion(resultadosGoteo.ritmoInfusion)}
+                </p>
+              </div>
 
-              <button
-                type="button"
-                className={
-                  tipoGoteroVisible === "micro"
-                    ? "toggle-btn active"
-                    : "toggle-btn"
-                }
-                onClick={() => setTipoGoteroVisible("micro")}
-              >
-                Microgoteo (60 gotas/mL)
-              </button>
-            </div>
-
-            <div className="result-card">
-              <p className="result-label">
-                {tipoGoteroVisible === "macro"
-                  ? "Ritmo de goteo:"
-                  : "Ritmo de microgoteo:"}
-              </p>
-              <p className="result-value result-value-small">
-                {tipoGoteroVisible === "macro"
-                  ? formatearGotas(resultadosGoteo.macroGotas)
-                  : formatearGotas(resultadosGoteo.microGotas)}
+              <p className="aviso2">
+                Cálculos basados en fórmulas estándar de dosis e infusión.
               </p>
             </div>
+          )}
+        </div>
 
-            <div className="result-card">
-              <p className="result-label">Ritmo de infusión:</p>
-              <p className="result-value result-value-small">
-                {formatearRitmoInfusion(resultadosGoteo.ritmoInfusion)}
-              </p>
-            </div>
-            <p class="aviso2">Cálculos basados en fórmulas estándar de dosis e infusión.</p>
-          </div>
-        )}
+        <p className="aviso">
+          Esta aplicación es una herramienta de apoyo para cálculos clínicos. No
+          reemplaza el juicio profesional, protocolos institucionales ni la
+          verificación previa a la administración de medicamentos. Confirmar
+          siempre dosis, concentración, unidad y vía de administración antes de su
+          uso.
+        </p>
+
+        <p className="firma">© 2026 — M. Álvarez & O. Carvajal</p>
+        <p className="firma">Versión 1.0</p>
+
+        <div className="bottom-bar">
+          <button className="reset-btn" onClick={reiniciarTodo}>
+            Reiniciar
+          </button>
+        </div>
       </div>
 
-      <p class="aviso">Esta aplicación es una herramienta de apoyo para cálculos clínicos. No reemplaza el juicio profesional, protocolos institucionales ni la verificación previa a la administración de medicamentos. Confirmar siempre dosis, concentración, unidad y vía de administración antes de su uso.</p>
-      <p class="firma">© 2026 — M. Álvarez & O. Carvajal</p>
-      <p class="firma">Version 1.0</p>
-
-      <div className="bottom-bar">
-        <button className="reset-btn" onClick={reiniciarTodo}>
-          Reiniciar
-        </button>
-      </div>
-    </div>
-    <Analytics />
-
+      <Analytics />
     </>
-    
   );
 }
