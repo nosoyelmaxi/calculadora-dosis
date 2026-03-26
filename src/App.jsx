@@ -535,7 +535,7 @@ export default function App() {
               </div>
 
               <div className="field">
-                <label>Cantidad del medicamento en el frasco</label>
+                <label>Concentracion del Medicamento</label>
                 <div className="input-row">
                   <input
                     ref={frascoInputRef}
@@ -594,7 +594,7 @@ export default function App() {
               )}
 
               <div className="field">
-                <label>Volumen disponible</label>
+                <label>Volumen del Medicamento</label>
                 <div className="input-row">
                   <input
                     {...crearPropsInputDecimal(
