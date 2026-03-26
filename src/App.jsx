@@ -238,13 +238,21 @@ export default function App() {
 
     setUnidadDosis(nuevaUnidad);
 
-    if (nuevaUnidad === "UI" && unidadFrasco !== "UI") {
-      setUnidadFrasco("UI");
-      limpiarCamposVolumen(dosisInputRef);
+    if (nuevaUnidad === "UI") {
+      if (unidadFrasco !== "UI") {
+        setUnidadFrasco("UI");
+      }
+
+      setCantidadFrasco("");
+      setVolumenDisponible("");
+      setDosisIndicada("");
+      enfocarInput(dosisInputRef);
       return;
     }
 
     setDosisIndicada("");
+    setCantidadFrasco("");
+    setVolumenDisponible("");
     enfocarInput(dosisInputRef);
   }
 
@@ -284,39 +292,19 @@ export default function App() {
     limpiarCamposVolumen(dosisInputRef);
   }
 
-  const usandoUI = unidadDosis === "UI" || unidadFrasco === "UI";
+  const usandoUI = unidadDosis === "UI";
+  const mostrarConcentracionMedicamento = !usandoUI;
 
   const resultadoVolumen = useMemo(() => {
-    const volumenMl = convertirAMl(volumenDisponible, unidadVolumen);
-
-    if (volumenMl === null || volumenMl <= 0 || volumenMl > 1000000) {
-      return null;
-    }
-
     if (usandoUI) {
-      if (unidadDosis !== "UI" || unidadFrasco !== "UI") {
-        return null;
-      }
-
       const dosisUI = parsearNumero(dosisIndicada);
-      const frascoUI = parsearNumero(cantidadFrasco);
       const concentracionUI = obtenerConcentracionUI(tipoUI);
 
       if (
         dosisUI === null ||
-        frascoUI === null ||
         dosisUI <= 0 ||
-        frascoUI <= 0 ||
-        !concentracionUI
-      ) {
-        return null;
-      }
-
-      const concentracionIngresada = frascoUI / volumenMl;
-
-      if (
-        !Number.isFinite(concentracionIngresada) ||
-        Math.abs(concentracionIngresada - concentracionUI) > 0.0001
+        concentracionUI === null ||
+        concentracionUI <= 0
       ) {
         return null;
       }
@@ -324,10 +312,14 @@ export default function App() {
       return dosisUI / concentracionUI;
     }
 
+    const volumenMl = convertirAMl(volumenDisponible, unidadVolumen);
     const dosisMg = convertirAMg(dosisIndicada, unidadDosis);
     const frascoMg = convertirAMg(cantidadFrasco, unidadFrasco);
 
     if (
+      volumenMl === null ||
+      volumenMl <= 0 ||
+      volumenMl > 1000000 ||
       dosisMg === null ||
       frascoMg === null ||
       dosisMg <= 0 ||
@@ -459,10 +451,10 @@ export default function App() {
             </div>
           </nav>
 
-          {/* 🔽 BLOQUE DE DONACIÓN */}
           <div className="side-menu-donate">
             <p className="side-menu-donate-text">
-              Esta app es gratuita.<br />
+              Esta app es gratuita.
+              <br />
               Si te resulta útil, puedes apoyarnos con una pequeña donación 💛
             </p>
 
@@ -534,32 +526,33 @@ export default function App() {
                 </div>
               </div>
 
-              <div className="field">
-                <label>Concentracion del Medicamento</label>
-                <div className="input-row">
-                  <input
-                    ref={frascoInputRef}
-                    {...crearPropsInputDecimal(
-                      cantidadFrasco,
-                      setCantidadFrasco,
-                      12
-                    )}
-                    placeholder="Ej: 50"
-                  />
-                  <select
-                    value={unidadFrasco}
-                    onChange={manejarCambioUnidadFrasco}
-                  >
-                    <option value="mg">mg</option>
-                    <option value="g">g</option>
-                    <option value="UI">UI</option>
-                  </select>
+              {mostrarConcentracionMedicamento && (
+                <div className="field">
+                  <label>Concentración del Medicamento</label>
+                  <div className="input-row">
+                    <input
+                      ref={frascoInputRef}
+                      {...crearPropsInputDecimal(
+                        cantidadFrasco,
+                        setCantidadFrasco,
+                        12
+                      )}
+                      placeholder="Ej: 50"
+                    />
+                    <select
+                      value={unidadFrasco}
+                      onChange={manejarCambioUnidadFrasco}
+                    >
+                      <option value="mg">mg</option>
+                      <option value="g">g</option>
+                    </select>
+                  </div>
                 </div>
-              </div>
+              )}
 
               {usandoUI && (
                 <div className="field">
-                  <label>Tipo de concentración UI</label>
+                  <label>Tipo de medicamento</label>
 
                   <div className="toggle-group">
                     <button
@@ -593,22 +586,24 @@ export default function App() {
                 </div>
               )}
 
-              <div className="field">
-                <label>Volumen del Medicamento</label>
-                <div className="input-row">
-                  <input
-                    {...crearPropsInputDecimal(
-                      volumenDisponible,
-                      setVolumenDisponible,
-                      12
-                    )}
-                    placeholder="Ej: 5"
-                  />
-                  <select value={unidadVolumen} disabled>
-                    <option value="mL">mL</option>
-                  </select>
+              {!usandoUI && (
+                <div className="field">
+                  <label>Volumen del Medicamento</label>
+                  <div className="input-row">
+                    <input
+                      {...crearPropsInputDecimal(
+                        volumenDisponible,
+                        setVolumenDisponible,
+                        12
+                      )}
+                      placeholder="Ej: 1"
+                    />
+                    <select value={unidadVolumen} disabled>
+                      <option value="mL">mL</option>
+                    </select>
+                  </div>
                 </div>
-              </div>
+              )}
 
               <div className="result-card">
                 <p className="result-label">Debes administrar:</p>
